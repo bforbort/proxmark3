@@ -186,8 +186,9 @@ void MifareDES_Auth1(uint8_t mode, uint8_t algo, uint8_t keyno,  uint8_t *datain
 
 	int len = 0;
 	//uint8_t PICC_MASTER_KEY8[8] = { 0x40,0x41,0x42,0x43,0x44,0x45,0x46,0x47};
-	uint8_t PICC_MASTER_KEY16[16] = { 0x40,0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4a,0x4b,0x4c,0x4d,0x4e,0x4f };
-	uint8_t null_key_data8[8] = {0x00};
+	//uint8_t PICC_MASTER_KEY16[16] = { 0x40,0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4a,0x4b,0x4c,0x4d,0x4e,0x4f };
+    uint8_t PICC_MASTER_KEY16[16] = { 0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77 };
+    uint8_t null_key_data8[8] = {0x00};
 	//uint8_t null_key_data16[16] = {0x00};	
 	//uint8_t new_key_data8[8]  = { 0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77};
 	//uint8_t new_key_data16[16]  = { 0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEE,0xFF};
@@ -358,6 +359,104 @@ void MifareDES_Auth1(uint8_t mode, uint8_t algo, uint8_t keyno,  uint8_t *datain
                 return;
             }
             
+            }
+            
+            // 3DES support
+            if (algo == 2) {
+                uint8_t keybytes[16];
+                uint8_t RndA[8] = {0x00};
+                uint8_t RndB[8] = {0x00};
+                
+                if (datain[1] == 0xff){
+                    memcpy(keybytes,PICC_MASTER_KEY16,16);
+                } else{
+                    memcpy(keybytes, datain+1, datalen);
+                }
+                
+                struct desfire_key defaultkey = {0};
+                desfirekey_t key = &defaultkey;
+                Desfire_3des_key_new(keybytes, key);
+                
+                cmd[0] = AUTHENTICATE;
+                cmd[1] = keyno;  //keynumber
+                len = DesfireAPDU(cmd, 2, resp);
+                if ( !len ) {
+                    if (MF_DBGLEVEL >= 1) {
+                        DbpString("Authentication failed. Card timeout.");
+                    }
+                    OnError();
+                    return;
+                }
+                
+                if ( resp[2] == 0xaf ){
+                } else {
+                    DbpString("Authetication failed. Invalid key number.");
+                    OnError();
+                    return;
+                }
+                
+                memcpy( encRndB, resp+3, 8);
+                
+                tdes_dec(&decRndB, &encRndB, key->data);
+                memcpy(RndB, decRndB, 8);
+                rol(decRndB,8);
+                
+                // This should be random
+                uint8_t decRndA[8] = {0x00};
+                memcpy(RndA, decRndA, 8);
+                uint8_t encRndA[8] = {0x00};
+                
+                tdes_dec(&encRndA, &decRndA, key->data);
+                
+                memcpy(both, encRndA, 8);
+                
+                for (int x = 0; x < 8; x++) {
+                    decRndB[x] = decRndB[x] ^ encRndA[x];
+                    
+                }
+                
+                tdes_dec(&encRndB, &decRndB, key->data);
+                
+                memcpy(both + 8, encRndB, 8);
+                
+                cmd[0] = ADDITIONAL_FRAME;
+                memcpy(cmd+1, both, 16 );
+                
+                len = DesfireAPDU(cmd, 17, resp);
+                if ( !len ) {
+                    if (MF_DBGLEVEL >= 1) {
+                        DbpString("Authentication failed. Card timeout.");
+                    }
+                    OnError();
+                    return;
+                }
+                
+                if ( resp[2] == 0x00 ){
+                    
+                    struct desfire_key sessionKey = {0};
+                    desfirekey_t skey = &sessionKey;
+                    Desfire_session_key_new( RndA, RndB , key, skey );
+                    //print_result("SESSION : ", skey->data, 8);
+                    
+                    memcpy(encRndA, resp+3, 8);
+                    tdes_dec(&encRndA, &encRndA, key->data);
+                    rol(decRndA,8);
+                    for (int x = 0; x < 8; x++) {
+                        if (decRndA[x] != encRndA[x]) {
+                            DbpString("Authetication failed. Cannot varify PICC.");
+                            OnError();
+                            return;
+                        }
+                    }
+                    
+                    OnSuccess();
+                    cmd_send(CMD_ACK,1,0,0,skey->data,16);
+                    
+                } else {
+                    DbpString("Authetication failed.");
+                    OnError();
+                    return;
+                }
             }
             }
 			break;

@@ -49,10 +49,12 @@ void Desfire_des_key_new_with_version (const uint8_t value[8], desfirekey_t key)
 void Desfire_3des_key_new (const uint8_t value[16], desfirekey_t key) {
     uint8_t data[16];
     memcpy (data, value, 16);
+    /*
     for (int n=0; n < 8; n++)
         data[n] &= 0xfe;
     for (int n=8; n < 16; n++)
         data[n] |= 0x01;
+     */
     Desfire_3des_key_new_with_version (data, key);
 }
 
@@ -60,6 +62,7 @@ void Desfire_3des_key_new_with_version (const uint8_t value[16], desfirekey_t ke
     if ( key != NULL ){
 		key->type = T_3DES;
 		memcpy (key->data, value, 16);
+        memcpy (key->data + 16, value, 8);
 		update_key_schedules (key);
 	}
 }
