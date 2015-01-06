@@ -331,9 +331,11 @@ void MifareDES_Auth1(uint8_t mode, uint8_t algo, uint8_t keyno,  uint8_t *datain
                     }
                 }
                 
-                //Change the selected key to a new value.
                 /*
-                 
+                //Change the selected key to a new value.
+                
+                 // Current key is a 3DES key, change it to a DES key
+                 if (algo == 2) {
                  cmd[0] = CHANGE_KEY;
                  cmd[1] = keyno;
                  
@@ -372,7 +374,51 @@ void MifareDES_Auth1(uint8_t mode, uint8_t algo, uint8_t keyno,  uint8_t *datain
                  while(!len) {
                  len = DesfireAPDU(cmd,26,resp);
                  }
-                 */
+                 
+                 } else {
+                    // Current key is a DES key, change it to a 3DES key
+                    if (algo == 1) {
+                        cmd[0] = CHANGE_KEY;
+                        cmd[1] = keyno;
+                        
+                        uint8_t newKey[16] = {0x40,0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4a,0x4b,0x4c,0x4d,0x4e,0x4f};
+                        
+                        uint8_t first, second;
+                        uint8_t buff1[8] = {0x00};
+                        uint8_t buff2[8] = {0x00};
+                        uint8_t buff3[8] = {0x00};
+                        
+                        memcpy(buff1,newKey, 8);
+                        memcpy(buff2,newKey + 8, 8);
+                        
+                        ComputeCrc14443(CRC_14443_A, newKey, 16, &first, &second);
+                        memcpy(buff3, &first, 1);
+                        memcpy(buff3 + 1, &second, 1);
+                        
+                        des_dec(&buff1, &buff1, skey->data);
+                        memcpy(cmd+2,buff1,8);
+                        
+                        for (int x = 0; x < 8; x++) {
+                            buff2[x] = buff2[x] ^ buff1[x];
+                        }
+                        des_dec(&buff2, &buff2, skey->data);
+                        memcpy(cmd+10,buff2,8);
+                        
+                        for (int x = 0; x < 8; x++) {
+                            buff3[x] = buff3[x] ^ buff2[x];
+                        }
+                        des_dec(&buff3, &buff3, skey->data);
+                        memcpy(cmd+18,buff3,8);
+                        
+                        // The command always times out on the first attempt, this will retry until a response
+                        // is recieved.
+                        len = 0;
+                        while(!len) {
+                            len = DesfireAPDU(cmd,26,resp);
+                        }
+                    }
+                 }
+                */
                 
                 OnSuccess();
                 cmd_send(CMD_ACK,1,0,0,skey->data,16);
