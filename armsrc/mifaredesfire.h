@@ -11,5 +11,6 @@
 #include "desfire_key.h"
 #include "mifareutil.h"
 #include "../include/common.h"
+#include "des.h"
 
 #endif

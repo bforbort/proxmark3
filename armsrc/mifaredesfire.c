@@ -1,5 +1,4 @@
 #include "mifaredesfire.h"
-#include "des.h"
 
 #define MAX_APPLICATION_COUNT 28
 #define MAX_FILE_COUNT 16
@@ -374,7 +373,7 @@ void MifareDES_Auth1(uint8_t mode, uint8_t algo, uint8_t keyno,  uint8_t *datain
                 
                 struct desfire_key defaultkey = {0};
                 desfirekey_t key = &defaultkey;
-                Desfire_3des_key_new(keybytes, key);
+                Desfire_3des_key_new_with_version(keybytes, key);
                 
                 cmd[0] = AUTHENTICATE;
                 cmd[1] = keyno;  //keynumber
