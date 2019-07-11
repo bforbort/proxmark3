@@ -1570,7 +1570,7 @@ void Mifare_DES_Auth1(uint8_t arg0, uint8_t *datain){
 	iso14443a_setup(FPGA_HF_ISO14443A_READER_LISTEN);
 	clear_trace();
 
-	int len = iso14443a_select_card(uid, NULL, &cuid, true, 0, true);
+	int len = iso14443a_select_card(uid, NULL, &cuid, true, 0, 0);
 	if(!len) {
 		if (MF_DBGLEVEL >= MF_DBG_ERROR) Dbprintf("Can't select card");
 		OnError(1);

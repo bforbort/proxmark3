@@ -35,7 +35,8 @@ static const uint8_t DefaultKey[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 static int CmdHelp(const char *Cmd);
 
 int CmdHFMFDesAuth(const char *cmd) {
-	uint8_t uid[7] = {0x00};
+	// My test card
+	uint8_t uid[7] = {0x04, 0x6e, 0x22, 0x72, 0x63, 0x34, 0x80};
 	uint8_t keyn[250] = {0x00};
 	int keynlen = 0;
 	uint8_t key[250] = {0};
@@ -71,38 +72,40 @@ int CmdHFMFDesAuth(const char *cmd) {
 	}
 
 	// Find card's UID
-	UsbCommand c = {CMD_READER_ISO_14443a, {ISO14A_CONNECT | ISO14A_NO_RATS, 0, 0}};
+//	UsbCommand c = {CMD_READER_ISO_14443a, {ISO14A_CONNECT | ISO14A_NO_DISCONNECT, 0, 0}};
+//	SendCommand(&c);
+//
+//	UsbCommand resp;
+//	WaitForResponse(CMD_ACK,&resp);
+//
+//	iso14a_card_select_t card;
+//	memcpy(&card, (iso14a_card_select_t *)resp.d.asBytes, sizeof(iso14a_card_select_t));
+//
+//	uint64_t select_status = resp.arg[0];       // 0: couldn't read, 1: OK, with ATS, 2: OK, no ATS, 3: proprietary Anticollision
+//
+//	if(select_status == 0) {
+//		if (cmd[0] != 's') PrintAndLog("iso14443a card select failed");
+//		return 1;
+//	}
+//
+//	if(select_status == 3) {
+//		PrintAndLog("Card doesn't support standard iso14443-3 anticollision");
+//		PrintAndLog("ATQA : %02x %02x", card.atqa[1], card.atqa[0]);
+//		return 1;
+//	}
+//
+//	memcpy(uid, card.uid, 7);
+//	PrintAndLog(" Card Detected\n UID : %s", sprint_hex(uid, card.uidlen));
+
+	UsbCommand c = {CMD_MIFARE_DESFIRE_AUTH1, {0, uid}};
+//	c.cmd = CMD_MIFARE_DESFIRE_AUTH1;
+//	c.arg[0] = keyn[0];
+//	c.arg[1] = 0;
+//	c.arg[2] = 0;
+//	memcpy(c.d.asBytes, uid, 7);
 	SendCommand(&c);
 
 	UsbCommand resp;
-	WaitForResponse(CMD_ACK,&resp);
-
-	iso14a_card_select_t card;
-	memcpy(&card, (iso14a_card_select_t *)resp.d.asBytes, sizeof(iso14a_card_select_t));
-
-	uint64_t select_status = resp.arg[0];       // 0: couldn't read, 1: OK, with ATS, 2: OK, no ATS, 3: proprietary Anticollision
-
-	if(select_status == 0) {
-		if (cmd[0] != 's') PrintAndLog("iso14443a card select failed");
-		return 1;
-	}
-
-	if(select_status == 3) {
-		PrintAndLog("Card doesn't support standard iso14443-3 anticollision");
-		PrintAndLog("ATQA : %02x %02x", card.atqa[1], card.atqa[0]);
-		return 1;
-	}
-
-	memcpy(uid, card.uid, 7);
-	PrintAndLog(" Card Detected\n UID : %s", sprint_hex(uid, card.uidlen));
-
-	c.cmd = CMD_MIFARE_DESFIRE_AUTH1;
-	c.arg[0] = keyn[0];
-	c.arg[1] = 0;
-	c.arg[2] = 0;
-	memcpy(c.d.asBytes, uid, 7);
-	SendCommand(&c);
-
 	WaitForResponse(CMD_ACK, &resp);
 
 	// TODO: Second Stage Auth

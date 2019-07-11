@@ -785,17 +785,17 @@ int DesfireAPDU(uint8_t *cmd, size_t cmd_len, uint8_t *dataout){
 // CreateAPDU
 size_t CreateAPDU( uint8_t *datain, size_t len, uint8_t *dataout){
 
-	size_t cmdlen = MIN(len+4, USB_CMD_DATA_SIZE-1);
+	size_t cmdlen = MIN(len+3, USB_CMD_DATA_SIZE-1);
 
 	uint8_t cmd[cmdlen];
 	memset(cmd, 0, cmdlen);
 
-	cmd[0] = 0x0A;  //  0x0A = skicka cid,  0x02 = ingen cid. S�rskilda bitar //
+	cmd[0] = 0x02;  //  0x0A = skicka cid,  0x02 = ingen cid. S�rskilda bitar //
 	cmd[0] |= pcb_blocknum; // OR the block number into the PCB
-	cmd[1] = 0x00;  //  CID: 0x00 //FIXME: allow multiple selected cards
+	//cmd[1] = 0x00;  //  CID: 0x00 //FIXME: allow multiple selected cards
 
-	memcpy(cmd+2, datain, len);
-	AppendCrc14443a(cmd, len+2);
+	memcpy(cmd+1, datain, len);
+	AppendCrc14443a(cmd, len+1);
 
 	memcpy(dataout, cmd, cmdlen);
 
