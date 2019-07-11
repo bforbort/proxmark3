@@ -25,6 +25,8 @@
 
 int MF_DBGLEVEL = MF_DBG_INFO;
 
+uint8_t pcb_blocknum = 0;
+
 // crypto1 helpers
 void mf_crypto1_decryptEx(struct Crypto1State *pcs, uint8_t *data_in, int len, uint8_t *data_out){
 	uint8_t bt = 0;
@@ -710,7 +712,6 @@ void emlClearMem(void) {
 	return;
 }
 
-
 // Mifare desfire commands
 // FIXME: This is not using ISO1443-4 APDUs.  Card will not respond.
 // TODO: Implement 14443-4 I and R block framing
@@ -749,6 +750,64 @@ int mifare_sendcmd_special2(struct Crypto1State *pcs, uint8_t crypted, uint8_t c
 	return len;
 }
 
+// 3 olika ISO s�tt att skicka data till DESFIRE (direkt, inkapslat, inkapslat ISO)
+// cmd  =  cmd bytes to send
+// cmd_len = length of cmd
+// dataout = pointer to response data array
+int DesfireAPDU(uint8_t *cmd, size_t cmd_len, uint8_t *dataout){
+
+	uint32_t status = 0;
+	size_t wrappedLen = 0;
+	uint8_t wCmd[USB_CMD_DATA_SIZE] = {0};
+
+	wrappedLen = CreateAPDU( cmd, cmd_len, wCmd);
+
+	if (MF_DBGLEVEL >= 4) {
+		print_result("WCMD <--: ", wCmd, wrappedLen);
+	}
+	ReaderTransmit( wCmd, wrappedLen, NULL);
+
+	uint8_t resp_par[MAX_PARITY_SIZE];
+	status = ReaderReceive(dataout, resp_par);
+
+	if( status == 0x00){
+		if (MF_DBGLEVEL >= 4) {
+			Dbprintf("fukked");
+		}
+		return 1; //DATA LINK ERROR
+	}
+	// if we received an I- or R(ACK)-Block with a block number equal to the
+	// current block number, toggle the current block number
+	else if (status >= 4 // PCB+CID+CRC = 4 bytes
+	         && ((dataout[0] & 0xC0) == 0 // I-Block
+	             || (dataout[0] & 0xD0) == 0x80) // R-Block with ACK bit set to 0
+	         && (dataout[0] & 0x01) == pcb_blocknum) // equal block numbers
+	{
+		pcb_blocknum ^= 1;  //toggle next block
+	}
+	return status;
+}
+
+// CreateAPDU
+size_t CreateAPDU( uint8_t *datain, size_t len, uint8_t *dataout){
+
+	size_t cmdlen = MIN(len+4, USB_CMD_DATA_SIZE-1);
+
+	uint8_t cmd[cmdlen];
+	memset(cmd, 0, cmdlen);
+
+	cmd[0] = 0x0A;  //  0x0A = skicka cid,  0x02 = ingen cid. S�rskilda bitar //
+	cmd[0] |= pcb_blocknum; // OR the block number into the PCB
+	cmd[1] = 0x00;  //  CID: 0x00 //FIXME: allow multiple selected cards
+
+	memcpy(cmd+2, datain, len);
+	AppendCrc14443a(cmd, len+2);
+
+	memcpy(dataout, cmd, cmdlen);
+
+	return cmdlen;
+}
+
 int mifare_desfire_des_auth1(uint32_t uid, uint8_t keyn, uint8_t *blockData){
 
 	int len;
@@ -756,9 +815,11 @@ int mifare_desfire_des_auth1(uint32_t uid, uint8_t keyn, uint8_t *blockData){
 	uint8_t data[2]={0x0a, 0x00};
 	data[1] = keyn;
 	uint8_t receivedAnswer[MAX_FRAME_SIZE];
-	uint8_t receivedAnswerPar[MAX_PARITY_SIZE];
+//	uint8_t receivedAnswerPar[MAX_PARITY_SIZE];
 
-	len = mifare_sendcmd_special(NULL, 1, 0x02, data, receivedAnswer,receivedAnswerPar,NULL);
+//	len = mifare_sendcmd_special(NULL, 1, 0x02, data, receivedAnswer,receivedAnswerPar,NULL);
+	len = DesfireAPDU(data, 2, receivedAnswer);
+
 	if (len == 1) {
 		if (MF_DBGLEVEL >= MF_DBG_ERROR)
 			Dbprintf("Cmd Error: %02x", receivedAnswer[0]);
