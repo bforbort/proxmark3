@@ -713,9 +713,6 @@ void emlClearMem(void) {
 }
 
 // Mifare desfire commands
-// FIXME: This is not using ISO1443-4 APDUs.  Card will not respond.
-// TODO: Implement 14443-4 I and R block framing
-// TODO: Take different command lengths
 int mifare_sendcmd_special(struct Crypto1State *pcs, uint8_t crypted, uint8_t cmd, uint8_t* data, uint8_t* answer, uint8_t *answer_parity, uint32_t *timing)
 {
 	uint8_t dcmd[5] = {0x00};
@@ -750,10 +747,7 @@ int mifare_sendcmd_special2(struct Crypto1State *pcs, uint8_t crypted, uint8_t c
 	return len;
 }
 
-// 3 olika ISO s�tt att skicka data till DESFIRE (direkt, inkapslat, inkapslat ISO)
-// cmd  =  cmd bytes to send
-// cmd_len = length of cmd
-// dataout = pointer to response data array
+// TODO: RATS
 int DesfireAPDU(uint8_t *cmd, size_t cmd_len, uint8_t *dataout){
 
 	uint32_t status = 0;
