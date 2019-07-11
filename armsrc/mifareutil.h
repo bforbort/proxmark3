@@ -59,7 +59,7 @@ int mifare_ultra_halt();
 // desfire
 int mifare_sendcmd_special(struct Crypto1State *pcs, uint8_t crypted, uint8_t cmd, uint8_t* data, uint8_t* answer, uint8_t *answer_parity, uint32_t *timing);
 int mifare_sendcmd_special2(struct Crypto1State *pcs, uint8_t crypted, uint8_t cmd, uint8_t* data, uint8_t* answer,uint8_t *answer_parity, uint32_t *timing);
-int mifare_desfire_des_auth1(uint32_t uid, uint8_t *blockData);
+int mifare_desfire_des_auth1(uint32_t uid, uint8_t keyn, uint8_t *blockData);
 int mifare_desfire_des_auth2(uint32_t uid, uint8_t *key, uint8_t *blockData);
 
 // crypto functions

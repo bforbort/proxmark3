@@ -36,20 +36,20 @@ static int CmdHelp(const char *Cmd);
 
 int CmdHFMFDesAuth(const char *cmd) {
 	uint8_t uid[7] = {0x00};
-	uint8_t keyn[250] = {0};
+	uint8_t keyn[250] = {0x00};
 	int keynlen = 0;
 	uint8_t key[250] = {0};
 	int keylen = 0;
 	
 	CLIParserInit("hf mfd auth",
 		"Executes DES3 authentication command for Mifare DESFire card",
-		"Usage:\n\thf mfd auth 0000 00000000000000000000000000000000 -> executes authentication\n"
-			"\thf mfd auth 9003 FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF -v -> executes authentication and shows all the system data\n");
+		"Usage:\n\thf mfd auth 00 00000000000000000000000000000000 -> executes authentication\n"
+			"\thf mfd auth 02 FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF -v -> executes authentication and shows all the system data\n");
 
 	void* argtable[] = {
 		arg_param_begin,
 		arg_lit0("vV",  "verbose", "show internal data."),
-		arg_str1(NULL,  NULL,     "<Key Num (HEX 2 bytes)>", NULL),
+		arg_str1(NULL,  NULL,     "<Key Num (HEX 1 byte)>", NULL),
 		arg_str1(NULL,  NULL,     "<Key Value (HEX 16 bytes)>", NULL),
 		arg_param_end
 	};
@@ -60,8 +60,8 @@ int CmdHFMFDesAuth(const char *cmd) {
 	CLIGetHexWithReturn(3, key, &keylen);
 	CLIParserFree();
 	
-	if (keynlen != 2) {
-		PrintAndLog("ERROR: <Key Num> must be 2 bytes long instead of: %d", keynlen);
+	if (keynlen != 1) {
+		PrintAndLog("ERROR: <Key Num> must be 1 byte long instead of: %d", keynlen);
 		return 1;
 	}
 	
@@ -97,8 +97,8 @@ int CmdHFMFDesAuth(const char *cmd) {
 	PrintAndLog(" Card Detected\n UID : %s", sprint_hex(uid, card.uidlen));
 
 	c.cmd = CMD_MIFARE_DESFIRE_AUTH1;
-	c.arg[0] = uid;
-	c.arg[1] = keyn;
+	c.arg[0] = keyn[0];
+	c.arg[1] = 0;
 	c.arg[2] = 0;
 	memcpy(c.d.asBytes, uid, 7);
 	SendCommand(&c);

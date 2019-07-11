@@ -749,11 +749,12 @@ int mifare_sendcmd_special2(struct Crypto1State *pcs, uint8_t crypted, uint8_t c
 	return len;
 }
 
-int mifare_desfire_des_auth1(uint32_t uid, uint8_t *blockData){
+int mifare_desfire_des_auth1(uint32_t uid, uint8_t keyn, uint8_t *blockData){
 
 	int len;
 	// load key, keynumber
 	uint8_t data[2]={0x0a, 0x00};
+	data[1] = keyn;
 	uint8_t receivedAnswer[MAX_FRAME_SIZE];
 	uint8_t receivedAnswerPar[MAX_PARITY_SIZE];
 

@@ -1563,6 +1563,8 @@ void Mifare_DES_Auth1(uint8_t arg0, uint8_t *datain){
 	byte_t dataout[11] = {0x00};
 	uint8_t uid[10] = {0x00};
 	memcpy(uid, datain, 7);
+	uint8_t keyn = 0;
+	memcpy(&keyn, &arg0, 1);
 	uint32_t cuid;
 
 	iso14443a_setup(FPGA_HF_ISO14443A_READER_LISTEN);
@@ -1575,7 +1577,7 @@ void Mifare_DES_Auth1(uint8_t arg0, uint8_t *datain){
 		return;
 	};
 
-	if(mifare_desfire_des_auth1(cuid, dataout)){
+	if(mifare_desfire_des_auth1(cuid, keyn, dataout)){
 		if (MF_DBGLEVEL >= MF_DBG_ERROR) Dbprintf("Authentication part1: Fail.");
 		OnError(4);
 		return;
