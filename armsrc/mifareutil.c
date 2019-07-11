@@ -25,6 +25,7 @@
 
 int MF_DBGLEVEL = MF_DBG_INFO;
 
+// TODO: This needs to be reset after connection is broken
 uint8_t pcb_blocknum = 0;
 
 // crypto1 helpers
