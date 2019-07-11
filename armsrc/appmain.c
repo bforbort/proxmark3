@@ -1292,6 +1292,14 @@ void UsbPacketReceived(uint8_t *packet, int len)
 			SniffMifare(c->arg[0]);
 			break;
 
+		// mifare DESFire
+		case CMD_MIFARE_DESFIRE_AUTH1:
+			Mifare_DES_Auth1(c->arg[0], c->d.asBytes);
+			break;
+		case CMD_MIFARE_DESFIRE_AUTH2:
+			Mifare_DES_Auth2(c->arg[0], c->d.asBytes);
+			break;
+
 #endif
 
 #ifdef WITH_ICLASS

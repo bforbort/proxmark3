@@ -132,8 +132,8 @@ void MifareCIdent();  // is "magic chinese" card?
 void MifareUSetPwd(uint8_t arg0, uint8_t *datain);
 
 //desfire
-void Mifare_DES_Auth1(uint8_t arg0,uint8_t *datain);
-void Mifare_DES_Auth2(uint32_t arg0, uint8_t *datain);					   
+void Mifare_DES_Auth1(uint8_t arg0, uint8_t *datain);
+void Mifare_DES_Auth2(uint32_t arg0, uint8_t *datain);
 
 // mifaredesfire.h
 bool 	InitDesfireCard();

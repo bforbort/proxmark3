@@ -712,6 +712,9 @@ void emlClearMem(void) {
 
 
 // Mifare desfire commands
+// FIXME: This is not using ISO1443-4 APDUs.  Card will not respond.
+// TODO: Implement 14443-4 I and R block framing
+// TODO: Take different command lengths
 int mifare_sendcmd_special(struct Crypto1State *pcs, uint8_t crypted, uint8_t cmd, uint8_t* data, uint8_t* answer, uint8_t *answer_parity, uint32_t *timing)
 {
 	uint8_t dcmd[5] = {0x00};

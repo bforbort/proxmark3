@@ -1562,6 +1562,7 @@ void Mifare_DES_Auth1(uint8_t arg0, uint8_t *datain){
 
 	byte_t dataout[11] = {0x00};
 	uint8_t uid[10] = {0x00};
+	memcpy(uid, datain, 7);
 	uint32_t cuid;
 
 	iso14443a_setup(FPGA_HF_ISO14443A_READER_LISTEN);
